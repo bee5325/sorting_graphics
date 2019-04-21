@@ -3,37 +3,61 @@ import random
 import copy
 import sequence
 
-S_SIZE = S_WID, S_HGT = 600, 400
+S_SIZE = S_WID, S_HGT = 1080, 400
 screen = pygame.display.set_mode(S_SIZE)
-NUMB_COUNT = 200 
+NUMB_COUNT = 1080 
 
 nlist = [random.random()*S_HGT for _ in range(NUMB_COUNT)]
 num = sequence.NumGroup(nlist, S_WID, S_HGT)
 
 
+class TempNumGroup(sequence.NumGroup):
+
+    def __init__(self, base_num_group):
+        nlist = [0 for _ in range(base_num_group.length)]
+        screen_w = base_num_group.screen_w
+        screen_h = base_num_group.screen_h
+        super().__init__(nlist, screen_w, screen_h)
+
+        for n in self.nlist:
+            n.set_color((255,0,0))
+            n.set_alpha(125)
+        self.curr_idx = 0
+
+    def append(self, num):
+        self[self.curr_idx].set_val(num.val)
+        self.curr_idx += 1
+
+    def clear(self):
+        for i in range(self.curr_idx):
+            self[i].set_val(0)
+        self.curr_idx = 0
+
+    def set_start_pos(self, idx):
+        self.bottomleft = (idx*self.sprite_w, self.screen_h)
+
+    def __iter__(self):
+        return iter(self.nlist[:self.curr_idx])
+
+
 def draw_all():
-    screen.fill((0,0,0))
+    screen.fill(0)
+    num.update()
     num.draw(screen)
+    templist.update()
+    templist.draw(screen)
     pygame.display.flip()
 
 
-def draw_templist(templist):
-    for n in templist:
-        n.set_state(1)
-        n.draw()
-
-
-# TODO: Think of ways to implement templist for the new data structure
 def merge_sort(nlist, templist, start, merge_size, left, right):
 
-    curr_idx = start + len(templist)
     left_done = (left >= start+merge_size or left >= len(nlist))
     right_done = (right >= start+2*merge_size or right >= len(nlist))
     
     # both left and right exhausted
     if left_done and right_done:
-        for i in range(len(templist)):
-            nlist[start+i] = copy.copy(templist[i])
+        for i, t in enumerate(templist):
+            nlist[start+i].set_val(t.val)
         templist.clear()
         start = start + 2*merge_size
         left = start
@@ -50,22 +74,22 @@ def merge_sort(nlist, templist, start, merge_size, left, right):
     # one side is exhausted
     if left_done or right_done:
         if left_done:
-            templist[right] = nlist[right].val)
+            templist.append(nlist[right])
             chosen = right
             right += 1
         elif right_done:
-            templist.append(nlist[left].val)
+            templist.append(nlist[left])
             chosen = left 
             left += 1
         return start, merge_size, left, right, chosen
 
     # both sides haven't exhausted
     if nlist[left].val > nlist[right].val:
-        templist.append(nlist[right].val)
+        templist.append(nlist[right])
         chosen = right 
         right += 1
     else:
-        templist.append(nlist[left].val)
+        templist.append(nlist[left])
         chosen = left
         left += 1
     return start, merge_size, left, right, chosen
@@ -75,7 +99,7 @@ def merge_sort(nlist, templist, start, merge_size, left, right):
 if __name__ == '__main__':
     pygame.init()
 
-    templist = sequence.NumGroup([0 for _ in range(NUMB_COUNT), S_WID, S_HGT)
+    templist = TempNumGroup(num)
 
     start, merge_size, left, right = 0, 1, 0, 1
 
@@ -88,14 +112,14 @@ if __name__ == '__main__':
         if start != -1:
 
             # display part 1
+            templist.set_start_pos(start)
             left_done = (left >= start+merge_size or left >= len(num))
             right_done = (right >= start+2*merge_size or right >= len(num))
             for i, n in enumerate(num):
-                if i == left or i == right:
-                    if i == left and not left_done:
-                        n.set_color((0,0,255))
-                    if i == right and not right_done:
-                        n.set_color((0,0,255))
+                if i == left and not left_done:
+                    n.set_color((0,0,255))
+                elif i == right and not right_done:
+                    n.set_color((0,0,255))
                 elif i >= start and i < start+2*merge_size:
                     n.set_color((255,255,255))
                 else:
@@ -111,7 +135,5 @@ if __name__ == '__main__':
             for n in num:
                 n.set_color((255,255,255))
 
-        num.update()
-        num.draw(screen)
-        templist.draw(screen)
-        pygame.display.flip()
+        draw_all()
+

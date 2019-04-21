@@ -8,17 +8,28 @@ class Number(pygame.sprite.Sprite):
     def __init__(self, val, width):
         super().__init__()
         self.val = int(val)
+        self.width = width
         self.image = pygame.Surface((width, val))
-        self.image.fill((255,255,255))
+        self.color = (255,255,255)
+        self.alpha = 255
+        self.image.fill(self.color)
+        self.image.set_alpha(self.alpha)
         self.rect = self.image.get_rect()
 
-    # def set_val(self, val):
-    #     self.val = int(val)
-    #     self.image = pygame.Surface((R_WID, int(val)))
-    #     self.image.fill((255,255,255))
+    def set_val(self, val):
+        self.val = int(val)
+        self.image = pygame.Surface((self.width, val))
+        self.image.fill(self.color)
+        self.image.set_alpha(self.alpha)
+        self.rect = self.image.get_rect()
 
     def set_color(self, color):
-        self.image.fill(color)
+        self.color = color
+        self.image.fill(self.color)
+        self.image.set_alpha(self.alpha)
+        
+    def set_alpha(self, alpha):
+        self.alpha = alpha
 
 
 class NumGroup(pygame.sprite.AbstractGroup):
@@ -39,12 +50,16 @@ class NumGroup(pygame.sprite.AbstractGroup):
             n.rect.bottomleft = (self.bottomleft[0] + i*self.sprite_w, self.bottomleft[1])
 
     def swap(self, n1, n2):
-        temp = self.nlist[n1]
-        self.nlist[n1] = self.nlist[n2]
-        self.nlist[n2] = temp
+        temp = self[n1]
+        self[n1] = self[n2]
+        self[n2] = temp
 
     def __iter__(self):
         return iter(self.nlist)
 
     def __getitem__(self, idx):
         return self.nlist[idx]
+
+    def __setitem__(self, idx, val):
+        self.nlist[idx] = val
+
